@@ -4,7 +4,6 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
-HEADER_REPO="${HEADER_REPO:-Orange99/proxmox-mailflow-installer}"
 var_tags="${var_tags:-email;webmail}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
@@ -14,41 +13,21 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
-ensure_mailflow_header() {
-  local header_path="/usr/local/community-scripts/headers/ct/mailflow"
-  local header_url="https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
-  mkdir -p "$(dirname "${header_path}")"
-  if ! command curl -fsSL "${header_url}" -o "${header_path}"; then
-    cat >"${header_path}" <<'EOF'
- __  __       _ _ _____ _
-|  \/  | __ _(_) |  ___| | _____      __
-| |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
-| |  | | (_| | | |  _| | | (_) \ V  V /
-|_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
-EOF
-  fi
-}
-
 show_mailflow_header() {
-  local header_path="/usr/local/community-scripts/headers/ct/mailflow"
   clear
-  if [[ -s "${header_path}" ]]; then
-    cat "${header_path}"
-  else
-    cat <<'EOF'
+  cat <<'EOF'
  __  __       _ _ _____ _
 |  \/  | __ _(_) |  ___| | _____      __
 | |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
 | |  | | (_| | | |  _| | | (_) \ V  V /
 |_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
+
 EOF
-  fi
   _HEADER_SHOWN=1
 }
 
 set +x
 
-ensure_mailflow_header
 show_mailflow_header
 variables
 color
@@ -98,9 +77,8 @@ function update_script() {
 function description() { return 0; }
 
 set_gui_notes() {
-  local notes_file
-  notes_file="$(mktemp)"
-  cat >"${notes_file}" <<'EOF'
+  local notes_html
+  notes_html="$(cat <<'EOF'
 <div align='center'>
   <a href='https://community-scripts.org' target='_blank' rel='noopener noreferrer'>
     <img src='https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/images/logo-81x112.png' alt='Logo' style='width:81px;height:112px;'/>
@@ -134,11 +112,11 @@ set_gui_notes() {
   </span>
 </div>
 EOF
+)"
 
-  if ! pct set "${CTID}" -description "$(cat "${notes_file}")" >/dev/null 2>&1; then
+  if ! pct set "${CTID}" -description "${notes_html}" >/dev/null 2>&1; then
     msg_warn "Could not set Proxmox GUI notes automatically"
   fi
-  rm -f "${notes_file}"
 }
 
 start
