@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source=/dev/null
-MAILFLOW_HEADER_ROOT="$(mktemp -d)"
-mkdir -p "${MAILFLOW_HEADER_ROOT}/ct/headers"
-curl -fsSL "https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/headers/mailflow" \
-  -o "${MAILFLOW_HEADER_ROOT}/ct/headers/mailflow"
-export COMMUNITY_SCRIPTS_ROOT="${MAILFLOW_HEADER_ROOT}"
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
-set +x
-
-# Copyright (c) 2026 community-scripts ORG
-# Author: Pascal
-# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://mailflow.sh/
 
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
@@ -23,6 +12,22 @@ var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
+
+header_info() {
+  clear
+  cat <<'EOF'
+    __  __       _ _ _____ _
+   |  \/  | __ _(_) |  ___| | _____      __
+   | |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
+   | |  | | (_| | | |  _| | | (_) \ V  V /
+   |_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
+
+   MailFlow LXC Installer
+   https://mailflow.sh/ | https://github.com/Orange99/proxmox-mailflow-installer
+EOF
+}
+
+set +x
 
 header_info "$APP"
 variables
