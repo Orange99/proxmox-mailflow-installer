@@ -59,7 +59,7 @@ function update_script() {
   $STD npm ci --omit=dev
 
   msg_info "Restarting ${APP}"
-  systemctl restart mailflow
+  $STD systemctl restart mailflow
 
   msg_ok "Updated ${APP} to ${RELEASE}"
   exit 0
