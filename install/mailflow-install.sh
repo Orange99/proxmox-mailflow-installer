@@ -6,6 +6,8 @@
 # Source: https://mailflow.sh/
 
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+# Keep installer output clean even if caller enabled xtrace.
+set +x
 color
 verb_ip6
 catch_errors
@@ -59,7 +61,7 @@ msg_ok "Installed Dependencies"
 
 msg_info "Installing Node.js 20"
 curl -fsSL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
-bash /tmp/nodesource_setup.sh
+$STD bash /tmp/nodesource_setup.sh
 rm -f /tmp/nodesource_setup.sh
 $STD apt-get update
 $STD apt-get install -y \
@@ -77,7 +79,7 @@ $STD apt-get update
 $STD apt-get install -y \
   postgresql-16 \
   postgresql-client-16
-systemctl enable --now postgresql redis-server nginx
+$STD systemctl enable --now postgresql redis-server nginx
 msg_ok "Installed PostgreSQL, Redis and nginx"
 
 msg_info "Setting up MailFlow"
@@ -92,17 +94,17 @@ fi
 
 if [[ -d .git ]]; then
   msg_info "Updating repository metadata"
-  git fetch --all --tags --force
+  $STD git fetch --all --tags --force
 else
   msg_info "Cloning MailFlow"
-  git clone --depth 1 --branch "$RELEASE" https://github.com/maathimself/mailflow.git . 2>/dev/null \
-    || git clone --depth 1 https://github.com/maathimself/mailflow.git .
+  $STD git clone --depth 1 --branch "$RELEASE" https://github.com/maathimself/mailflow.git . \
+    || $STD git clone --depth 1 https://github.com/maathimself/mailflow.git .
 fi
 
 if git rev-parse --verify "$RELEASE" >/dev/null 2>&1; then
-  git checkout -f "$RELEASE"
+  $STD git checkout -f "$RELEASE"
 else
-  git checkout -f main
+  $STD git checkout -f main
 fi
 msg_ok "Repository ready at ${RELEASE}"
 
@@ -153,13 +155,13 @@ msg_ok "Created PostgreSQL database"
 
 msg_info "Building frontend"
 cd /opt/mailflow/frontend || exit 1
-npm ci
-npm run build
+$STD npm ci
+$STD npm run build
 msg_ok "Built frontend"
 
 msg_info "Installing backend dependencies"
 cd /opt/mailflow/backend || exit 1
-npm ci --omit=dev
+$STD npm ci --omit=dev
 msg_ok "Installed backend dependencies"
 
 msg_info "Configuring nginx and TLS"
@@ -260,8 +262,8 @@ EOF
 
 ln -sf /etc/nginx/sites-available/mailflow /etc/nginx/sites-enabled/mailflow
 rm -f /etc/nginx/sites-enabled/default
-nginx -t
-systemctl restart nginx
+$STD nginx -t
+$STD systemctl restart nginx
 
 msg_info "Skipping manual DB migrations"
 msg_ok "MailFlow applies schema updates automatically on first startup"
@@ -295,7 +297,7 @@ EOF
 chown -R www-data:www-data /opt/mailflow
 chmod 640 /opt/mailflow/.env
 systemctl daemon-reload
-systemctl enable --now mailflow
+$STD systemctl enable --now mailflow
 msg_ok "Configured MailFlow"
 
 msg_info "Starting MailFlow"

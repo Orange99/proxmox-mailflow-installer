@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck source=/dev/null
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+set +x
 
 # Copyright (c) 2026 community-scripts ORG
 # Author: Pascal
@@ -42,20 +43,20 @@ function update_script() {
   msg_info "Updating ${APP} to ${RELEASE}"
   cd /opt/mailflow || exit 1
 
-  git fetch --all --tags --force
-  if ! git checkout -f "$RELEASE"; then
+  $STD git fetch --all --tags --force
+  if ! $STD git checkout -f "$RELEASE"; then
     msg_warn "Checkout of ${RELEASE} failed, falling back to main"
-    git checkout -f main
+    $STD git checkout -f main
   fi
 
   msg_info "Rebuilding frontend"
   cd /opt/mailflow/frontend || exit 1
-  npm ci
-  npm run build
+  $STD npm ci
+  $STD npm run build
 
   msg_info "Updating backend dependencies"
   cd /opt/mailflow/backend || exit 1
-  npm ci --omit=dev
+  $STD npm ci --omit=dev
 
   msg_info "Restarting ${APP}"
   systemctl restart mailflow
@@ -73,7 +74,18 @@ start
 # Important: do not redirect stderr here - whiptail renders on stderr and would
 # otherwise appear to "hang" during advanced storage selection.
 # A 404 from the official install-script fetch is expected for external apps.
+# We intercept only that one URL and return a harmless no-op script.
+curl() {
+  local _last="${!#}"
+  local _install_slug="${var_install:-mailflow}"
+  if [[ "${_last}" == "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/${_install_slug}.sh" ]]; then
+    printf ':\n'
+    return 0
+  fi
+  command curl "$@"
+}
 build_container
+unset -f curl
 
 # build_container sets $IP from DHCP; fall back to querying the container
 # if it was not set (happens when the official install script is missing).
