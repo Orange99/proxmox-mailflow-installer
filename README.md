@@ -14,7 +14,7 @@ Run this command **directly on your Proxmox host** in the shell:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
-> Replace `Orange99` with your actual GitHub username.
+> If you fork this repo, replace `Orange99` with your GitHub username in the URL.
 
 ---
 
@@ -127,7 +127,7 @@ ls -la        # Shows: backend/, frontend/, dist/, .env, etc.
 
 ### "Invalid credentials" im Frontend
 
-Wenn Sie die MailFlow-UI laden können, aber "Invalid credentials" erhalten:
+Wenn die MailFlow-UI erreichbar ist, aber "Invalid credentials" anzeigt, ist oft bereits ein anderer Benutzer in der Datenbank vorhanden.
 
 **1. Überprüfen Sie, ob das Backend läuft:**
 ```bash
@@ -142,24 +142,11 @@ sudo journalctl -u mailflow -f  # View live logs
 psql -h 127.0.0.1 -U mailflow -d mailflow -c "SELECT 1"  # Should return: 1
 ```
 
-**3. Überprüfen Sie die Datenbank-Migrationen:**
-```bash
-# Inside container (as www-data user)
-cd /opt/mailflow/backend
-sudo -u www-data npm run prisma migrate status
-```
+**3. Login-Flow prüfen:**
+- Es gibt keine Default-Credentials.
+- Der erste registrierte Benutzer wird Admin.
 
-**4. Führen Sie Migrationen manuell aus:**
-```bash
-cd /opt/mailflow/backend
-sudo -u www-data bash -c "
-  export NODE_ENV=production
-  export \$(cat /opt/mailflow/.env | grep -v '^#' | xargs)
-  npx prisma migrate deploy
-"
-```
-
-**5. Neu-Setup durchführen:**
+**4. Neu-Setup durchführen:**
 Wenn alles oben fehlschlägt, können Sie den Installer erneut ausführen — der vorhandene MailFlow-Container wird erkannt und aktualisiert:
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"

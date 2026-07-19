@@ -45,6 +45,7 @@ msg_info "Installing Dependencies"
 $STD apt-get install -y \
   curl \
   git \
+  jq \
   openssl \
   ca-certificates \
   gnupg \
@@ -57,7 +58,9 @@ $STD apt-get install -y \
 msg_ok "Installed Dependencies"
 
 msg_info "Installing Node.js 20"
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
+bash /tmp/nodesource_setup.sh
+rm -f /tmp/nodesource_setup.sh
 $STD apt-get update
 $STD apt-get install -y \
   nodejs
@@ -81,8 +84,11 @@ msg_info "Setting up MailFlow"
 mkdir -p /opt/mailflow
 cd /opt/mailflow || exit 1
 
-RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest \
-  | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | jq -r '.tag_name // empty')
+if [[ -z "${RELEASE}" ]]; then
+  msg_warn "Could not detect latest release tag, falling back to main"
+  RELEASE="main"
+fi
 
 if [[ -d .git ]]; then
   msg_info "Updating repository metadata"
@@ -125,23 +131,24 @@ set_env_var BUILD_SHA "$(git rev-parse --short HEAD)"
 
 
 msg_info "Creating PostgreSQL database"
-if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='mailflow'" | grep -q 1; then
-  sudo -u postgres psql -c "CREATE USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
+PSQL="sudo -u postgres psql -v ON_ERROR_STOP=1"
+if ! $PSQL -tAc "SELECT 1 FROM pg_roles WHERE rolname='mailflow'" | grep -q 1; then
+  $PSQL -c "CREATE USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
 else
-  sudo -u postgres psql -c "ALTER USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
+  $PSQL -c "ALTER USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
 fi
 
-if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='mailflow'" | grep -q 1; then
-  sudo -u postgres psql -c "CREATE DATABASE mailflow OWNER mailflow;"
+if ! $PSQL -tAc "SELECT 1 FROM pg_database WHERE datname='mailflow'" | grep -q 1; then
+  $PSQL -c "CREATE DATABASE mailflow OWNER mailflow;"
 else
-  sudo -u postgres psql -c "ALTER DATABASE mailflow OWNER TO mailflow;"
+  $PSQL -c "ALTER DATABASE mailflow OWNER TO mailflow;"
 fi
 
 # Grant all privileges to mailflow user
-sudo -u postgres psql -d mailflow -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mailflow;"
-sudo -u postgres psql -d mailflow -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mailflow;"
-sudo -u postgres psql -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mailflow;"
-sudo -u postgres psql -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mailflow;"
+$PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mailflow;"
+$PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mailflow;"
+$PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mailflow;"
+$PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mailflow;"
 msg_ok "Created PostgreSQL database"
 
 msg_info "Building frontend"
@@ -256,18 +263,8 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl restart nginx
 
-msg_info "Running database migrations"
-cd /opt/mailflow/backend || exit 1
-export NODE_ENV=production
-sudo -u www-data bash -c "
-  export NODE_ENV=production
-  export $(cat /opt/mailflow/.env | grep -v '^#' | xargs)
-  npm run prisma migrate deploy 2>/dev/null || \
-  npm run typeorm migration:run 2>/dev/null || \
-  npm run db:migrate 2>/dev/null || \
-  npx prisma migrate deploy 2>/dev/null || true
-"
-msg_ok "Database migrations completed"
+msg_info "Skipping manual DB migrations"
+msg_ok "MailFlow applies schema updates automatically on first startup"
 
 msg_info "Installing systemd service"
 cat >/etc/systemd/system/mailflow.service <<'EOF'

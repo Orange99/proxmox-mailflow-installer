@@ -8,6 +8,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # Source: https://mailflow.sh/
 
 APP="MailFlow"
+INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
 var_tags="${var_tags:-email;webmail;native}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
@@ -32,13 +33,20 @@ function update_script() {
     exit 1
   fi
 
-  RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+  RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+  if [[ -z "${RELEASE}" ]]; then
+    msg_warn "Could not detect latest release tag, falling back to main"
+    RELEASE="main"
+  fi
 
   msg_info "Updating ${APP} to ${RELEASE}"
   cd /opt/mailflow || exit 1
 
   git fetch --all --tags --force
-  git checkout -f "$RELEASE" 2>/dev/null || git checkout -f main
+  if ! git checkout -f "$RELEASE"; then
+    msg_warn "Checkout of ${RELEASE} failed, falling back to main"
+    git checkout -f main
+  fi
 
   msg_info "Rebuilding frontend"
   cd /opt/mailflow/frontend || exit 1
@@ -70,7 +78,10 @@ build_container
 # build_container sets $IP from DHCP; fall back to querying the container
 # if it was not set (happens when the official install script is missing).
 IP="${IP:-$(pct exec "${CTID}" -- hostname -I 2>/dev/null | awk '{print $1}')}"
-IP="${IP:-<container-ip>}"
+if [[ -z "${IP}" ]]; then
+  msg_warn "Could not determine container IP automatically"
+  IP="<check-container-ip>"
+fi
 
 # --- Run our own install script -------------------------------------------
 # build_container ran an empty script (404); we now push install.func and our
@@ -78,7 +89,7 @@ IP="${IP:-<container-ip>}"
 msg_info "Preparing ${APP} installer"
 curl -fsSL "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func" \
   | pct exec "${CTID}" -- bash -c "cat > /tmp/install.func"
-curl -fsSL "https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/install/mailflow-install.sh" \
+curl -fsSL "https://raw.githubusercontent.com/${INSTALL_REPO}/main/install/mailflow-install.sh" \
   | pct exec "${CTID}" -- bash -c "cat > /tmp/mailflow-install.sh"
 msg_ok "Prepared ${APP} installer"
 
