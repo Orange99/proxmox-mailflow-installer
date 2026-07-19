@@ -5,6 +5,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
 HEADER_REPO="${HEADER_REPO:-${INSTALL_REPO}}"
+CS_BASE_URL="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main"
 var_tags="${var_tags:-email;webmail}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
@@ -14,9 +15,29 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
+get_latest_release() {
+  local release
+  release="$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest \
+    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -n1)"
+  if [[ -z "${release}" ]]; then
+    msg_warn "Could not detect latest release tag, falling back to main"
+    release="main"
+  fi
+  printf '%s\n' "${release}"
+}
+
 show_mailflow_header() {
   clear
-  curl -fsSL "https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
+  if ! curl -fsSL "https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"; then
+    cat <<'EOF'
+ __  __       _ _ _____ _
+|  \/  | __ _(_) |  ___| | _____      __
+| |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
+| |  | | (_| | | |  _| | | (_) \ V  V /
+|_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
+EOF
+  fi
   echo
   _HEADER_SHOWN=1
 }
@@ -38,11 +59,7 @@ function update_script() {
     exit 1
   fi
 
-  RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
-  if [[ -z "${RELEASE}" ]]; then
-    msg_warn "Could not detect latest release tag, falling back to main"
-    RELEASE="main"
-  fi
+  RELEASE="$(get_latest_release)"
 
   msg_info "Updating ${APP} to ${RELEASE}"
   cd /opt/mailflow || exit 1
@@ -114,6 +131,52 @@ EOF
   fi
 }
 
+enable_noop_official_install_fetch() {
+  curl() {
+    local last_arg="${!#}"
+    local install_slug="${var_install:-mailflow}"
+    local official_install_url="${CS_BASE_URL}/install/${install_slug}.sh"
+    if [[ "${last_arg}" == "${official_install_url}" ]]; then
+      printf ':\n'
+      return 0
+    fi
+    command curl "$@"
+  }
+}
+
+resolve_container_ip() {
+  IP="${IP:-$(pct exec "${CTID}" -- hostname -I 2>/dev/null | awk '{print $1}')}"
+  if [[ -z "${IP}" ]]; then
+    msg_warn "Could not determine container IP automatically"
+    IP="<check-container-ip>"
+  fi
+}
+
+prepare_installer_files() {
+  msg_info "Preparing ${APP} installer"
+  curl -fsSL "${CS_BASE_URL}/misc/install.func" \
+    | pct exec "${CTID}" -- bash -c "cat > /tmp/install.func"
+  curl -fsSL "https://raw.githubusercontent.com/${INSTALL_REPO}/main/install/mailflow-install.sh" \
+    | pct exec "${CTID}" -- bash -c "cat > /tmp/mailflow-install.sh"
+  msg_ok "Prepared ${APP} installer"
+}
+
+run_container_installer() {
+  msg_info "Running ${APP} installer in container (takes a few minutes)"
+  if lxc-attach -n "${CTID}" -- bash -c '
+    export FUNCTIONS_FILE_PATH="$(cat /tmp/install.func)"
+    bash /tmp/mailflow-install.sh
+    _exit=$?
+    rm -f /tmp/install.func /tmp/mailflow-install.sh
+    exit $_exit
+  '; then
+    msg_ok "${APP} installer finished"
+  else
+    msg_error "${APP} installer failed with exit code $?"
+    exit 1
+  fi
+}
+
 start
 
 # build_container creates + customizes the LXC container.
@@ -121,51 +184,20 @@ start
 # otherwise appear to "hang" during advanced storage selection.
 # A 404 from the official install-script fetch is expected for external apps.
 # We intercept only that one URL and return a harmless no-op script.
-curl() {
-  local _last="${!#}"
-  local _install_slug="${var_install:-mailflow}"
-  if [[ "${_last}" == "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/${_install_slug}.sh" ]]; then
-    printf ':\n'
-    return 0
-  fi
-  command curl "$@"
-}
+enable_noop_official_install_fetch
 build_container
 unset -f curl
 
 # build_container sets $IP from DHCP; fall back to querying the container
 # if it was not set (happens when the official install script is missing).
-IP="${IP:-$(pct exec "${CTID}" -- hostname -I 2>/dev/null | awk '{print $1}')}"
-if [[ -z "${IP}" ]]; then
-  msg_warn "Could not determine container IP automatically"
-  IP="<check-container-ip>"
-fi
-
+resolve_container_ip
 set_gui_notes
 
 # --- Run our own install script -------------------------------------------
 # build_container ran an empty script (404); we now push install.func and our
 # install script into the container and execute it via lxc-attach.
-msg_info "Preparing ${APP} installer"
-curl -fsSL "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func" \
-  | pct exec "${CTID}" -- bash -c "cat > /tmp/install.func"
-curl -fsSL "https://raw.githubusercontent.com/${INSTALL_REPO}/main/install/mailflow-install.sh" \
-  | pct exec "${CTID}" -- bash -c "cat > /tmp/mailflow-install.sh"
-msg_ok "Prepared ${APP} installer"
-
-msg_info "Running ${APP} installer in container (takes a few minutes)"
-if lxc-attach -n "${CTID}" -- bash -c '
-  export FUNCTIONS_FILE_PATH="$(cat /tmp/install.func)"
-  bash /tmp/mailflow-install.sh
-  _exit=$?
-  rm -f /tmp/install.func /tmp/mailflow-install.sh
-  exit $_exit
-'; then
-  msg_ok "${APP} installer finished"
-else
-  msg_error "${APP} installer failed with exit code $?"
-  exit 1
-fi
+prepare_installer_files
+run_container_installer
 
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
