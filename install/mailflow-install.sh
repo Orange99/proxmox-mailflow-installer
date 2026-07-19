@@ -49,14 +49,24 @@ cd /opt/mailflow || exit 1
 RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest \
   | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
 
-curl -fsSLo docker-compose.yml \
-  https://raw.githubusercontent.com/maathimself/mailflow/${RELEASE}/docker-compose.ghcr.yml 2>/dev/null \
-  || curl -fsSLo docker-compose.yml \
+download_file() {
+  local target="$1"
+  local release_url="$2"
+  local fallback_url="$3"
+
+  if ! curl -fsSL "$release_url" -o "$target" >/dev/null 2>&1; then
+    curl -fsSL "$fallback_url" -o "$target" >/dev/null 2>&1
+  fi
+}
+
+download_file \
+  docker-compose.yml \
+  https://raw.githubusercontent.com/maathimself/mailflow/${RELEASE}/docker-compose.ghcr.yml \
   https://raw.githubusercontent.com/maathimself/mailflow/main/docker-compose.ghcr.yml
 
-curl -fsSLo .env \
-  https://raw.githubusercontent.com/maathimself/mailflow/${RELEASE}/.env.example 2>/dev/null \
-  || curl -fsSLo .env \
+download_file \
+  .env \
+  https://raw.githubusercontent.com/maathimself/mailflow/${RELEASE}/.env.example \
   https://raw.githubusercontent.com/maathimself/mailflow/main/.env.example
 msg_ok "Downloaded MailFlow ${RELEASE}"
 
