@@ -10,7 +10,7 @@ set +x
 
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
-var_tags="${var_tags:-email;webmail;native}"
+var_tags="${var_tags:-email;webmail}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-8}"

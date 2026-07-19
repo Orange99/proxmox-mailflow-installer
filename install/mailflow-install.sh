@@ -6,7 +6,6 @@
 # Source: https://mailflow.sh/
 
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
-# Keep installer output clean even if caller enabled xtrace.
 set +x
 color
 verb_ip6
