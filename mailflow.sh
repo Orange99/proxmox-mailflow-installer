@@ -6,12 +6,12 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # License: MIT
 
 APP="MailFlow"
-var_tags="mail,selfhost,docker"
-var_cpu="2"
-var_ram="4096"
-var_disk="15"
-var_os="debian"
-var_version="13"
+var_tags="${var_tags:-adblock}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-15}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-13}"
 
 header_info "$APP"
 
