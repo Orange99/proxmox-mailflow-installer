@@ -4,6 +4,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
+HEADER_REPO="${HEADER_REPO:-Orange99/proxmox-mailflow-installer}"
 var_tags="${var_tags:-email;webmail}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
@@ -13,18 +14,18 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
-header_info() {
-  clear
-  cat <<'EOF'
-    __  __       _ _ _____ _
-   |  \/  | __ _(_) |  ___| | _____      __
-   | |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
-   | |  | | (_| | | |  _| | | (_) \ V  V /
-   |_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
-
-   MailFlow LXC Installer
-   https://mailflow.sh/ | https://github.com/Orange99/proxmox-mailflow-installer
-EOF
+# Redirect header download to this repo's header file (state-of-the-art header path).
+curl() {
+  local _last="${!#}"
+  local _official_header="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/headers/mailflow"
+  local _custom_header="https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
+  if [[ "${_last}" == "${_official_header}" ]]; then
+    local _args=("$@")
+    _args[$(( $# - 1 ))]="${_custom_header}"
+    command curl "${_args[@]}"
+    return $?
+  fi
+  command curl "$@"
 }
 
 set +x
