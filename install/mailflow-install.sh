@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2026 community-scripts ORG
-# Author: Pascal
+# Author: Orange99
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://mailflow.sh/
 
