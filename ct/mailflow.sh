@@ -16,7 +16,7 @@ var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-8}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
-var_unprivileged="${var_unprivileged:-0}"
+var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
 header_info "$APP"

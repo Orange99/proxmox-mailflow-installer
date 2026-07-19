@@ -34,6 +34,10 @@
       "type": "info"
     },
     {
+      "text": "Automatic USB passthrough (privileged container)",
+      "type": "info"
+    },
+    {
       "text": "Native installation with Node.js 20, PostgreSQL 16, and Redis — no Docker overhead.",
       "type": "info"
     },
@@ -47,4 +51,3 @@
     }
   ]
 }
-
