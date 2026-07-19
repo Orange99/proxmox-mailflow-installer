@@ -76,8 +76,49 @@ function update_script() {
   exit 0
 }
 
-# Override description() – MailFlow is not in community-scripts registry yet
-function description() { return 0; }
+set_gui_notes() {
+  local notes_file
+  notes_file="$(mktemp)"
+  cat >"${notes_file}" <<'EOF'
+<div align='center'>
+  <a href='https://community-scripts.org' target='_blank' rel='noopener noreferrer'>
+    <img src='https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/images/logo-81x112.png' alt='Logo' style='width:81px;height:112px;'/>
+  </a>
+
+  <h2 style='font-size: 24px; margin: 20px 0;'>MailFlow LXC</h2>
+
+  <p style='margin: 16px 0;'>
+    <a href='https://community-scripts.org/donate' target='_blank' rel='noopener noreferrer'>
+      <img src='https://img.shields.io/badge/❤️-Sponsoring%20%26%20Donations-FF5E5B' alt='Sponsoring and donations' />
+    </a>
+  </p>
+
+  <p style='margin: 12px 0;'>
+    <a href='https://community-scripts.org/scripts/mailflow' target='_blank' rel='noopener noreferrer'>
+      <img src='https://img.shields.io/badge/📦-Open%20Script%20Page-00617f' alt='Open script page' />
+    </a>
+  </p>
+
+  <span style='margin: 0 10px;'>
+    <i class="fa fa-github fa-fw" style="color: #f5f5f5;"></i>
+    <a href='https://github.com/community-scripts/ProxmoxVE' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'>GitHub</a>
+  </span>
+  <span style='margin: 0 10px;'>
+    <i class="fa fa-comments fa-fw" style="color: #f5f5f5;"></i>
+    <a href='https://github.com/community-scripts/ProxmoxVE/discussions' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'>Discussions</a>
+  </span>
+  <span style='margin: 0 10px;'>
+    <i class="fa fa-exclamation-circle fa-fw" style="color: #f5f5f5;"></i>
+    <a href='https://github.com/community-scripts/ProxmoxVE/issues' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'>Issues</a>
+  </span>
+</div>
+EOF
+
+  if ! pct set "${CTID}" -description "$(cat "${notes_file}")" >/dev/null 2>&1; then
+    msg_warn "Could not set Proxmox GUI notes automatically"
+  fi
+  rm -f "${notes_file}"
+}
 
 start
 
@@ -105,6 +146,8 @@ if [[ -z "${IP}" ]]; then
   msg_warn "Could not determine container IP automatically"
   IP="<check-container-ip>"
 fi
+
+set_gui_notes
 
 # --- Run our own install script -------------------------------------------
 # build_container ran an empty script (404); we now push install.func and our
