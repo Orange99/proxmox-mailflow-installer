@@ -17,10 +17,6 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-0}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
-# Force interactive advanced wizard by default so storage selection (e.g. local/local-lvm)
-# is always shown. Can still be overridden: mode=default bash -c "$(curl ...)"
-mode="${mode:-advanced}"
-
 header_info "$APP"
 variables
 color
@@ -66,13 +62,10 @@ function description() { return 0; }
 start
 
 # build_container creates + customizes the LXC container.
-# Its install-script fetch will 404 (we are not in the official repo) and run
-# an empty script – that is expected. We capture stderr to a temp file and
-# filter out only the specific curl 404 message so the output stays clean.
-_MFERR="/tmp/_mailflow_build_err.$$"
-build_container 2>"${_MFERR}"
-grep -v 'The requested URL returned error' "${_MFERR}" >&2 || true
-rm -f "${_MFERR}"
+# Important: do not redirect stderr here - whiptail renders on stderr and would
+# otherwise appear to "hang" during advanced storage selection.
+# A 404 from the official install-script fetch is expected for external apps.
+build_container
 
 # build_container sets $IP from DHCP; fall back to querying the container
 # if it was not set (happens when the official install script is missing).
