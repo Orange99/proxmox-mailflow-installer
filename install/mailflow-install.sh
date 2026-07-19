@@ -42,6 +42,35 @@ path.write_text('\n'.join(out) + '\n')
 PY
 }
 
+install_banner() {
+  # Render the HTML-style welcome as a plain-text terminal banner for interactive shells.
+  cat >/etc/profile.d/99-mailflow-banner.sh <<'EOF'
+#!/usr/bin/env bash
+
+case "$-" in
+  *i*) ;;
+  *) return 0 ;;
+esac
+
+[ -t 1 ] || return 0
+
+cat <<'BANNER'
+============================================================
+                      MailFlow LXC
+============================================================
+
+  MailFlow:     https://mailflow.sh/
+  GitHub:       https://github.com/maathimself/mailflow
+  Installer:    https://github.com/Orange99/proxmox-mailflow-installer
+
+  HTTPS:        https://<container-ip>
+  Admin:        first registered user becomes admin
+  Secrets:      /opt/mailflow/.env
+BANNER
+EOF
+  chmod 0644 /etc/profile.d/99-mailflow-banner.sh
+}
+
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
   curl \
@@ -299,6 +328,10 @@ systemctl daemon-reload
 $STD systemctl enable --now mailflow
 msg_ok "Configured MailFlow"
 
+msg_info "Installing login banner"
+install_banner
+msg_ok "Installed login banner"
+
 msg_info "Starting MailFlow"
 systemctl restart mailflow
 sleep 3
@@ -318,4 +351,3 @@ $STD apt-get autoclean -y
 msg_ok "Cleaned"
 
 exit 0
-

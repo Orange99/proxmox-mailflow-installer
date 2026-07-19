@@ -121,6 +121,8 @@ cd /opt/mailflow
 ls -la        # Shows: backend/, frontend/, dist/, .env, etc.
 ```
 
+Beim Login erscheint außerdem ein eigenes MailFlow-Banner im Terminal.
+
 ---
 
 ## 🔧 Troubleshooting
@@ -195,4 +197,3 @@ MIT — see [LICENSE](https://github.com/community-scripts/ProxmoxVE/raw/main/LI
 
 - [MailFlow](https://mailflow.sh/) by [@maathimself](https://github.com/maathimself)
 - Installer style based on [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE)
-
