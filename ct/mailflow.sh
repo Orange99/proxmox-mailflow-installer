@@ -75,6 +75,8 @@ function update_script() {
   msg_ok "Updated ${APP} to ${RELEASE}"
   exit 0
 }
+# Override description() – MailFlow is not in community-scripts registry yet
+function description() { return 0; }
 
 set_gui_notes() {
   local notes_file
