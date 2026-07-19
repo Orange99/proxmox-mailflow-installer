@@ -8,10 +8,10 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # Source: https://mailflow.sh/
 
 APP="MailFlow"
-var_tags="${var_tags:-email;docker}"
-var_cpu="${var_cpu:-2}"
-var_ram="${var_ram:-2048}"
-var_disk="${var_disk:-10}"
+var_tags="${var_tags:-email;webmail;native}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-8}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-0}"
@@ -34,26 +34,30 @@ function update_script() {
 
   RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
 
-  msg_info "Stopping ${APP}"
-  cd /opt/mailflow || exit 1
-  docker compose down
-  msg_ok "Stopped ${APP}"
-
   msg_info "Updating ${APP} to ${RELEASE}"
-  docker compose pull
-  docker compose up -d
+  cd /opt/mailflow || exit 1
+
+  git fetch --all --tags --force
+  git checkout -f "$RELEASE" 2>/dev/null || git checkout -f main
+
+  msg_info "Rebuilding frontend"
+  cd /opt/mailflow/frontend || exit 1
+  npm ci
+  npm run build
+
+  msg_info "Updating backend dependencies"
+  cd /opt/mailflow/backend || exit 1
+  npm ci --omit=dev
+
+  msg_info "Restarting ${APP}"
+  systemctl restart mailflow
+
   msg_ok "Updated ${APP} to ${RELEASE}"
-
-  msg_info "Cleaning up Docker images"
-  docker image prune -f &>/dev/null
-  msg_ok "Cleaned up old images"
-
   exit 0
 }
 
 start
 build_container
-description
 
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
