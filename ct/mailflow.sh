@@ -29,10 +29,27 @@ EOF
   fi
 }
 
+show_mailflow_header() {
+  local header_path="/usr/local/community-scripts/headers/ct/mailflow"
+  clear
+  if [[ -s "${header_path}" ]]; then
+    cat "${header_path}"
+  else
+    cat <<'EOF'
+ __  __       _ _ _____ _
+|  \/  | __ _(_) |  ___| | _____      __
+| |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
+| |  | | (_| | | |  _| | | (_) \ V  V /
+|_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
+EOF
+  fi
+  _HEADER_SHOWN=1
+}
+
 set +x
 
 ensure_mailflow_header
-header_info "$APP"
+show_mailflow_header
 variables
 color
 catch_errors
