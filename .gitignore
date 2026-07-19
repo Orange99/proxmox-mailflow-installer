@@ -1,0 +1,12 @@
+# Editor
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / scratch
+*.local.sh
+

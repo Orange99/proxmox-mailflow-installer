@@ -1,0 +1,46 @@
+{
+  "name": "MailFlow",
+  "slug": "mailflow",
+  "categories": [2],
+  "date_created": "2026-07-19",
+  "type": "ct",
+  "updateable": true,
+  "privileged": true,
+  "interface_port": 443,
+  "documentation": "https://mailflow.sh/",
+  "website": "https://mailflow.sh/",
+  "logo": "https://mailflow.sh/favicon.ico",
+  "description": "MailFlow is a modern, self-hosted email management and routing platform. It provides a clean web UI and handles email deliverability, tracking, and routing — all running via Docker Compose inside a Debian LXC container.",
+  "install_methods": [
+    {
+      "type": "default",
+      "script": "ct/mailflow.sh",
+      "resources": {
+        "cpu": 2,
+        "ram": 2048,
+        "hdd": 10,
+        "os": "Debian",
+        "version": "12"
+      }
+    }
+  ],
+  "default_credentials": {
+    "username": null,
+    "password": null
+  },
+  "notes": [
+    {
+      "text": "MailFlow listens on HTTPS (port 443) using a self-signed certificate. Accept the browser security warning on first access.",
+      "type": "info"
+    },
+    {
+      "text": "All secrets (SESSION_SECRET, DB_PASSWORD, ENCRYPTION_KEY) are auto-generated on first install and stored in /opt/mailflow/.env.",
+      "type": "info"
+    },
+    {
+      "text": "This container is **privileged** because Docker-in-LXC requires kernel namespacing features (nesting=1, keyctl=1).",
+      "type": "warning"
+    }
+  ]
+}
+
