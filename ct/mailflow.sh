@@ -106,12 +106,18 @@ curl -fsSL "https://raw.githubusercontent.com/${INSTALL_REPO}/main/install/mailf
 msg_ok "Prepared ${APP} installer"
 
 msg_info "Running ${APP} installer in container (takes a few minutes)"
-lxc-attach -n "${CTID}" -- bash -c '
+if lxc-attach -n "${CTID}" -- bash -c '
   export FUNCTIONS_FILE_PATH="$(cat /tmp/install.func)"
   bash /tmp/mailflow-install.sh
+  _exit=$?
   rm -f /tmp/install.func /tmp/mailflow-install.sh
-'
-msg_ok "${APP} installer finished"
+  exit $_exit
+'; then
+  msg_ok "${APP} installer finished"
+else
+  msg_error "${APP} installer failed with exit code $?"
+  exit 1
+fi
 
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"

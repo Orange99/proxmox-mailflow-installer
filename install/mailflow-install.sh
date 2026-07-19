@@ -318,3 +318,5 @@ $STD apt-get autoremove -y
 $STD apt-get autoclean -y
 msg_ok "Cleaned"
 
+exit 0
+
