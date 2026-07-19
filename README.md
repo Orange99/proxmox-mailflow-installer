@@ -13,10 +13,6 @@ Run this command **directly on your Proxmox host** in the shell:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
-> Replace `<YOUR_GITHUB_USER>` with your actual GitHub username once the repo is public.
-
----
-
 ## 📦 What gets installed
 
 | Component | Details |
@@ -44,7 +40,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflo
 Run the **same script** again inside the already-created LXC container:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/<YOUR_GITHUB_USER>/proxmox-mailflow-installer/main/ct/mailflow.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
 The script detects an existing installation at `/opt/mailflow` and performs a `docker compose pull && docker compose up -d` instead.
