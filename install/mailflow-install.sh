@@ -286,8 +286,6 @@ msg_info "Starting MailFlow"
 systemctl restart mailflow
 msg_ok "Started MailFlow"
 
-motd_ssh
-customize
 
 msg_info "Cleaning up"
 $STD apt-get autoremove -y
