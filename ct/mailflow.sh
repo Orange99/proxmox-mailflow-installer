@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck source=/dev/null
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 
 # Copyright (c) 2026 community-scripts ORG
@@ -21,30 +22,6 @@ variables
 color
 catch_errors
 
-function default_settings() {
-  CT_TYPE="0"
-  PW=""
-  CT_ID=$NEXTID
-  HOSTNAME="mailflow"
-  DISK_SIZE="$var_disk"
-  CORE_COUNT="$var_cpu"
-  RAM_SIZE="$var_ram"
-  BRIDGE="vmbr0"
-  NET="dhcp"
-  GATE=""
-  APT_CACHER=""
-  APT_CACHER_IP=""
-  DISABLEIPV6="no"
-  MTU=""
-  SD=""
-  NS=""
-  MAC=""
-  VLAN=""
-  SSH="no"
-  VERBOSE="no"
-  echo_default
-}
-
 function update_script() {
   header_info
   check_container_storage
@@ -58,7 +35,7 @@ function update_script() {
   RELEASE=$(curl -fsSL https://api.github.com/repos/maathimself/mailflow/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
 
   msg_info "Stopping ${APP}"
-  cd /opt/mailflow
+  cd /opt/mailflow || exit 1
   docker compose down
   msg_ok "Stopped ${APP}"
 
@@ -78,8 +55,8 @@ start
 build_container
 description
 
-msg_ok "Completed Successfully!\n"
-echo -e "${CREATING}${GN}${APP} setup has been completed successfully!${CL}
-${INFO}${YW} Access it using the following URL:${CL}
-${TAB}${GATEWAY}${BGN}https://$(pct exec "$CTID" -- hostname -I | awk '{print $1}')${CL}"
+msg_ok "Completed successfully!\n"
+echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
+echo -e "${INFO}${YW}Access it using the following URL:${CL}"
+echo -e "${GATEWAY}${BGN}https://${IP}${CL}"
 
