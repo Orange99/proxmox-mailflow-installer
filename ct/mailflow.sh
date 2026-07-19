@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck source=/dev/null
+MAILFLOW_HEADER_ROOT="$(mktemp -d)"
+mkdir -p "${MAILFLOW_HEADER_ROOT}/ct/headers"
+curl -fsSL "https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/headers/mailflow" \
+  -o "${MAILFLOW_HEADER_ROOT}/ct/headers/mailflow"
+export COMMUNITY_SCRIPTS_ROOT="${MAILFLOW_HEADER_ROOT}"
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 set +x
 
@@ -126,4 +131,3 @@ echo -e "${GATEWAY}${BGN}https://${IP}${CL}"
 echo -e "${INFO}${YW}Frontend login:${CL}"
 echo -e "${TAB}${YWB}No default username/password.${CL}"
 echo -e "${TAB}${YWB}Register the first account in the UI (first account becomes admin).${CL}"
-
