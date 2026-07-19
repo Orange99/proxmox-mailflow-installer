@@ -14,22 +14,24 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
-# Redirect header download to this repo's header file (state-of-the-art header path).
-curl() {
-  local _last="${!#}"
-  local _official_header="https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/headers/mailflow"
-  local _custom_header="https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
-  if [[ "${_last}" == "${_official_header}" ]]; then
-    local _args=("$@")
-    _args[$(( $# - 1 ))]="${_custom_header}"
-    command curl "${_args[@]}"
-    return $?
+ensure_mailflow_header() {
+  local header_path="/usr/local/community-scripts/headers/ct/mailflow"
+  local header_url="https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
+  mkdir -p "$(dirname "${header_path}")"
+  if ! command curl -fsSL "${header_url}" -o "${header_path}"; then
+    cat >"${header_path}" <<'EOF'
+ __  __       _ _ _____ _
+|  \/  | __ _(_) |  ___| | _____      __
+| |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
+| |  | | (_| | | |  _| | | (_) \ V  V /
+|_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
+EOF
   fi
-  command curl "$@"
 }
 
 set +x
 
+ensure_mailflow_header
 header_info "$APP"
 variables
 color
