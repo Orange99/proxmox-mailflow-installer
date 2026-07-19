@@ -134,23 +134,23 @@ set_env_var BUILD_SHA "$(git rev-parse --short HEAD)"
 
 msg_info "Creating PostgreSQL database"
 PSQL="sudo -u postgres psql -v ON_ERROR_STOP=1"
-if ! $PSQL -tAc "SELECT 1 FROM pg_roles WHERE rolname='mailflow'" | grep -q 1; then
-  $PSQL -c "CREATE USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
+if ! $STD $PSQL -tAc "SELECT 1 FROM pg_roles WHERE rolname='mailflow'" | grep -q 1; then
+  $STD $PSQL -c "CREATE USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
 else
-  $PSQL -c "ALTER USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
+  $STD $PSQL -c "ALTER USER mailflow WITH PASSWORD '${DB_PASSWORD}';"
 fi
 
-if ! $PSQL -tAc "SELECT 1 FROM pg_database WHERE datname='mailflow'" | grep -q 1; then
-  $PSQL -c "CREATE DATABASE mailflow OWNER mailflow;"
+if ! $STD $PSQL -tAc "SELECT 1 FROM pg_database WHERE datname='mailflow'" | grep -q 1; then
+  $STD $PSQL -c "CREATE DATABASE mailflow OWNER mailflow;"
 else
-  $PSQL -c "ALTER DATABASE mailflow OWNER TO mailflow;"
+  $STD $PSQL -c "ALTER DATABASE mailflow OWNER TO mailflow;"
 fi
 
 # Grant all privileges to mailflow user
-$PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mailflow;"
-$PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mailflow;"
-$PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mailflow;"
-$PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mailflow;"
+$STD $PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mailflow;"
+$STD $PSQL -d mailflow -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mailflow;"
+$STD $PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mailflow;"
+$STD $PSQL -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mailflow;"
 msg_ok "Created PostgreSQL database"
 
 msg_info "Building frontend"
