@@ -56,13 +56,29 @@ function update_script() {
   exit 0
 }
 
-# Override community-scripts description lookup to avoid 404 for unofficial scripts
+# Override description() – not in community-scripts registry, suppresses API 404
 function description() { return 0; }
 
 start
-build_container
+# build_container creates and customizes the LXC; the install-script fetch will
+# 404 (we are not in the official repo) and run empty – that is expected here.
+# Suppress only that specific curl error line to keep output clean.
+build_container 2> >(grep -v 'The requested URL returned error' >&2)
 
+# Run our own install script explicitly via lxc-attach, with install.func injected
+msg_info "Preparing ${APP} installer"
+curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func \
+  | pct exec "$CTID" -- bash -c "cat > /tmp/install.func"
+curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/install/mailflow-install.sh \
+  | pct exec "$CTID" -- bash -c "cat > /tmp/mailflow-install.sh; chmod +x /tmp/mailflow-install.sh"
+msg_ok "Prepared ${APP} installer"
 
+msg_info "Running ${APP} installer in container (this may take several minutes)"
+lxc-attach -n "$CTID" -- bash -c '
+  export FUNCTIONS_FILE_PATH="$(cat /tmp/install.func)"
+  bash /tmp/mailflow-install.sh
+  rm -f /tmp/install.func /tmp/mailflow-install.sh
+'
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW}Access it using the following URL:${CL}"
