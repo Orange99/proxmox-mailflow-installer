@@ -17,6 +17,10 @@ var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-0}"
 var_features="${var_features:-keyctl=1,nesting=1}"
 
+# Force interactive advanced wizard by default so storage selection (e.g. local/local-lvm)
+# is always shown. Can still be overridden: mode=default bash -c "$(curl ...)"
+mode="${mode:-advanced}"
+
 header_info "$APP"
 variables
 color
@@ -97,4 +101,7 @@ msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW}Access it using the following URL:${CL}"
 echo -e "${GATEWAY}${BGN}https://${IP}${CL}"
+echo -e "${INFO}${YW}Frontend login:${CL}"
+echo -e "${TAB}${YWB}No default username/password.${CL}"
+echo -e "${TAB}${YWB}Register the first account in the UI (first account becomes admin).${CL}"
 
