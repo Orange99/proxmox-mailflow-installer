@@ -136,6 +136,12 @@ if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='mailfl
 else
   sudo -u postgres psql -c "ALTER DATABASE mailflow OWNER TO mailflow;"
 fi
+
+# Grant all privileges to mailflow user
+sudo -u postgres psql -d mailflow -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mailflow;"
+sudo -u postgres psql -d mailflow -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mailflow;"
+sudo -u postgres psql -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mailflow;"
+sudo -u postgres psql -d mailflow -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mailflow;"
 msg_ok "Created PostgreSQL database"
 
 msg_info "Building frontend"
@@ -250,6 +256,19 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl restart nginx
 
+msg_info "Running database migrations"
+cd /opt/mailflow/backend || exit 1
+export NODE_ENV=production
+sudo -u www-data bash -c "
+  export NODE_ENV=production
+  export $(cat /opt/mailflow/.env | grep -v '^#' | xargs)
+  npm run prisma migrate deploy 2>/dev/null || \
+  npm run typeorm migration:run 2>/dev/null || \
+  npm run db:migrate 2>/dev/null || \
+  npx prisma migrate deploy 2>/dev/null || true
+"
+msg_ok "Database migrations completed"
+
 msg_info "Installing systemd service"
 cat >/etc/systemd/system/mailflow.service <<'EOF'
 [Unit]
@@ -284,7 +303,15 @@ msg_ok "Configured MailFlow"
 
 msg_info "Starting MailFlow"
 systemctl restart mailflow
-msg_ok "Started MailFlow"
+sleep 3
+if systemctl is-active --quiet mailflow; then
+  msg_ok "Started MailFlow"
+else
+  msg_info "MailFlow service failed to start. Checking logs..."
+  systemctl status mailflow || true
+  journalctl -u mailflow -n 50 --no-pager || true
+  exit 1
+fi
 
 
 msg_info "Cleaning up"

@@ -123,6 +123,68 @@ ls -la        # Shows: backend/, frontend/, dist/, .env, etc.
 
 ---
 
+## 🔧 Troubleshooting
+
+### "Invalid credentials" im Frontend
+
+Wenn Sie die MailFlow-UI laden können, aber "Invalid credentials" erhalten:
+
+**1. Überprüfen Sie, ob das Backend läuft:**
+```bash
+# Inside container
+sudo systemctl status mailflow
+sudo journalctl -u mailflow -f  # View live logs
+```
+
+**2. Überprüfen Sie die PostgreSQL-Verbindung:**
+```bash
+# Inside container
+psql -h 127.0.0.1 -U mailflow -d mailflow -c "SELECT 1"  # Should return: 1
+```
+
+**3. Überprüfen Sie die Datenbank-Migrationen:**
+```bash
+# Inside container (as www-data user)
+cd /opt/mailflow/backend
+sudo -u www-data npm run prisma migrate status
+```
+
+**4. Führen Sie Migrationen manuell aus:**
+```bash
+cd /opt/mailflow/backend
+sudo -u www-data bash -c "
+  export NODE_ENV=production
+  export \$(cat /opt/mailflow/.env | grep -v '^#' | xargs)
+  npx prisma migrate deploy
+"
+```
+
+**5. Neu-Setup durchführen:**
+Wenn alles oben fehlschlägt, können Sie den Installer erneut ausführen — der vorhandene MailFlow-Container wird erkannt und aktualisiert:
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
+```
+
+### Backend startet nicht
+
+**Überprüfen Sie die .env-Datei:**
+```bash
+cat /opt/mailflow/.env
+```
+
+**Überprüfen Sie die Logs:**
+```bash
+journalctl -u mailflow -n 100 --no-pager
+```
+
+**Überprüfen Sie PostgreSQL:**
+```bash
+sudo systemctl status postgresql
+sudo -u postgres psql -d mailflow -c "\dt"  # Should show tables
+```
+
+---
+
 ## 🤝 Contributing to community-scripts
 
 To submit this to the official [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE) repository:
