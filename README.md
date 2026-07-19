@@ -11,10 +11,10 @@
 Run this command **directly on your Proxmox host** in the shell:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Pascal/proxmox-mailflow-installer/main/ct/mailflow.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
-> Replace `Pascal` with your actual GitHub username.
+> Replace `Orange99` with your actual GitHub username.
 
 ---
 
@@ -49,7 +49,7 @@ The script creates an **update function** that runs automatically when called ag
 
 ```bash
 # On Proxmox host, run the same installer again
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Pascal/proxmox-mailflow-installer/main/ct/mailflow.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
 The script detects an existing installation and:
