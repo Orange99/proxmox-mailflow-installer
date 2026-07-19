@@ -4,6 +4,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 
 APP="MailFlow"
 INSTALL_REPO="${INSTALL_REPO:-Orange99/proxmox-mailflow-installer}"
+HEADER_REPO="${HEADER_REPO:-${INSTALL_REPO}}"
 var_tags="${var_tags:-email;webmail}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
@@ -15,13 +16,7 @@ var_features="${var_features:-keyctl=1,nesting=1}"
 
 show_mailflow_header() {
   clear
-  cat <<'EOF'
- __  __       _ _ _____ _
-|  \/  | __ _(_) |  ___| | _____      __
-| |\/| |/ _` | | | |_  | |/ _ \ \ /\ / /
-| |  | | (_| | | |  _| | | (_) \ V  V /
-|_|  |_|\__,_|_|_|_|   |_|\___/ \_/\_/
-EOF
+  curl -fsSL "https://raw.githubusercontent.com/${HEADER_REPO}/main/ct/headers/mailflow"
   echo
   _HEADER_SHOWN=1
 }
