@@ -10,7 +10,7 @@
 Run this command **directly on your Proxmox host** in the shell:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/<YOUR_GITHUB_USER>/proxmox-mailflow-installer/main/ct/mailflow.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Orange99/proxmox-mailflow-installer/main/ct/mailflow.sh)"
 ```
 
 > Replace `<YOUR_GITHUB_USER>` with your actual GitHub username once the repo is public.
